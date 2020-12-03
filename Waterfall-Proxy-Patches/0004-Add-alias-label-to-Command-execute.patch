@@ -1,0 +1,49 @@
+From 1b692e32a5d7c5d58ed1b1815cc5616e603c47c5 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Tue, 9 Jun 2020 21:53:20 -0500
+Subject: [PATCH] Add alias label to Command#execute
+
+
+diff --git a/api/src/main/java/net/md_5/bungee/api/plugin/Command.java b/api/src/main/java/net/md_5/bungee/api/plugin/Command.java
+index b4566327..1c7adb6e 100644
+--- a/api/src/main/java/net/md_5/bungee/api/plugin/Command.java
++++ b/api/src/main/java/net/md_5/bungee/api/plugin/Command.java
+@@ -54,7 +54,22 @@ public abstract class Command
+      * @param sender the executor of this command
+      * @param args arguments used to invoke this command
+      */
+-    public abstract void execute(CommandSender sender, String[] args);
++    // Pl3x start
++    public void execute(CommandSender sender, String[] args) {
++        throw new UnsupportedOperationException();
++    }
++
++    /**
++     * Execute this command with the specified sender, label, and arguments.
++     *
++     * @param sender the executor of this command
++     * @param label alias of the command which was used
++     * @param args passed command arguments
++     */
++    public void execute(CommandSender sender, String label, String[] args) {
++        execute(sender, args);
++    }
++    // Pl3x end
+ 
+     /**
+      * Check if this command can be executed by the given sender.
+diff --git a/api/src/main/java/net/md_5/bungee/api/plugin/PluginManager.java b/api/src/main/java/net/md_5/bungee/api/plugin/PluginManager.java
+index 969533df..022a28e3 100644
+--- a/api/src/main/java/net/md_5/bungee/api/plugin/PluginManager.java
++++ b/api/src/main/java/net/md_5/bungee/api/plugin/PluginManager.java
+@@ -194,7 +194,7 @@ public final class PluginManager
+                         sender.getName(), commandLine
+                     } );
+                 }
+-                command.execute( sender, args );
++                command.execute( sender, split[0], args ); // Pl3x
+         // Waterfall start - split command & tab complete exception handlers for exception event
+         } catch ( Exception ex ) {
+             sender.sendMessage( ChatColor.RED + "An internal error occurred whilst executing this command, please check the console log for details." );
+-- 
+2.25.1
