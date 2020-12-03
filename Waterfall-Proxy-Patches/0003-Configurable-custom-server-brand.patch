@@ -1,0 +1,96 @@
+From 9dbf80d8ec9648a5c6d27d9f51199991c5f7dd04 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Tue, 9 Jun 2020 22:46:29 -0500
+Subject: [PATCH] Configurable custom server brand
+
+
+diff --git a/proxy/src/main/java/net/md_5/bungee/ServerConnector.java b/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
+index b486f2aa..b39f1749 100644
+--- a/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
++++ b/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
+@@ -268,8 +268,15 @@ public class ServerConnector extends PacketHandler
+                 user.getServer().disconnect( "Quitting" );
+             } else
+             {
++                // Pl3x start
++                String displayBrand = ProxyServer.getInstance().getTranslation("custom_brand");
++                if (displayBrand == null || displayBrand.isEmpty()) {
++                    displayBrand = bungee.getName() + " (" + bungee.getVersion() + ")";
++                }
++                // Pl3x end
++
+                 ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
+-                DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
++                DefinedPacket.writeString( displayBrand, brand ); // Pl3x
+                 user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand", brand, handshakeHandler.isServerForge() ) );
+                 brand.release();
+             }
+diff --git a/proxy/src/main/java/net/md_5/bungee/connection/DownstreamBridge.java b/proxy/src/main/java/net/md_5/bungee/connection/DownstreamBridge.java
+index 9e180c30..d7ea0c65 100644
+--- a/proxy/src/main/java/net/md_5/bungee/connection/DownstreamBridge.java
++++ b/proxy/src/main/java/net/md_5/bungee/connection/DownstreamBridge.java
+@@ -292,8 +292,15 @@ public class DownstreamBridge extends PacketHandler
+ 
+             Preconditions.checkState( !serverBrand.contains( bungee.getName() ), "Cannot connect proxy to itself!" );
+ 
++            // Pl3x start
++            String displayBrand = ProxyServer.getInstance().getTranslation("custom_brand");
++            if (displayBrand == null || displayBrand.isEmpty()) {
++                displayBrand = bungee.getName() + " <- " + serverBrand;
++            }
++            // Pl3x end
++
+             brand = ByteBufAllocator.DEFAULT.heapBuffer();
+-            DefinedPacket.writeString( bungee.getName() + " <- " + serverBrand, brand ); // Waterfall
++            DefinedPacket.writeString( displayBrand, brand ); // Pl3x
+             pluginMessage.setData( brand );
+             brand.release();
+             // changes in the packet are ignored so we need to send it manually
+diff --git a/proxy/src/main/java/net/md_5/bungee/connection/InitialHandler.java b/proxy/src/main/java/net/md_5/bungee/connection/InitialHandler.java
+index 7e6027aa..4c1ee0a6 100644
+--- a/proxy/src/main/java/net/md_5/bungee/connection/InitialHandler.java
++++ b/proxy/src/main/java/net/md_5/bungee/connection/InitialHandler.java
+@@ -175,7 +175,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
+         this.legacy = true;
+         final boolean v1_5 = ping.isV1_5();
+ 
+-        ServerPing legacy = new ServerPing( new ServerPing.Protocol( bungee.getName() + " " + bungee.getGameVersion(), bungee.getProtocolVersion() ),
++        // Pl3x start
++        String displayBrand = net.md_5.bungee.api.ProxyServer.getInstance().getTranslation("custom_brand");
++        if (displayBrand == null || displayBrand.isEmpty()) {
++            displayBrand = bungee.getName() + " " + bungee.getGameVersion();
++        }
++        // Pl3x end
++
++        ServerPing legacy = new ServerPing( new ServerPing.Protocol( displayBrand, bungee.getProtocolVersion() ), // Pl3x
+                 new ServerPing.Players( listener.getMaxPlayers(), bungee.getOnlineCount(), null ),
+                 new TextComponent( TextComponent.fromLegacyText( listener.getMotd() ) ), (Favicon) null );
+ 
+@@ -223,8 +230,15 @@ public class InitialHandler extends PacketHandler implements PendingConnection
+ 
+     private ServerPing getPingInfo(String motd, int protocol)
+     {
++        // Pl3x start
++        String displayBrand = net.md_5.bungee.api.ProxyServer.getInstance().getTranslation("custom_brand");
++        if (displayBrand == null || displayBrand.isEmpty()) {
++            displayBrand = bungee.getName() + " " + bungee.getGameVersion();
++        }
++        // Pl3x end
++
+         return new ServerPing(
+-                new ServerPing.Protocol( bungee.getName() + " " + bungee.getGameVersion(), protocol ),
++                new ServerPing.Protocol( displayBrand, protocol ), // Pl3x
+                 new ServerPing.Players( listener.getMaxPlayers(), bungee.getOnlineCount(), null ),
+                 motd, BungeeCord.getInstance().config.getFaviconObject()
+         );
+diff --git a/proxy/src/main/resources/messages.properties b/proxy/src/main/resources/messages.properties
+index 6e3ef0a4..63a6b484 100644
+--- a/proxy/src/main/resources/messages.properties
++++ b/proxy/src/main/resources/messages.properties
+@@ -38,3 +38,4 @@ you_got_summoned=\u00a76Summoned to {0} by {1}
+ command_perms_groups=\u00a76You have the following groups: {0}
+ command_perms_permission=\u00a79- {0}
+ command_ip=\u00a79IP of {0} is {1}
++custom_brand=
+-- 
+2.25.1
